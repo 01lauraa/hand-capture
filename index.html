@@ -2,125 +2,113 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Tilburg Hand Capture Tool</title>
+  <title>Hand Image Capture</title>
   <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    width: 100%;
-    background: #000;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    color: white;
-  }
-
-  header {
-    background: #00356b;
-    color: white;
-    padding: 10px 0;
-    font-size: 18px;
-    text-align: center;
-  }
-
-  /* 📸 Main camera area */
-  #camera-container {
-    position: relative;
-    width: 100%;
-    max-width: 700px;          /* prevents over-stretching on desktop */
-    height: 90vh;              /* fill ~90% of the visible screen */
-    margin: 0 auto;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #000;
-  }
-
-  video, #photo {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  #hand-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: auto;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  pointer-events: none;
-  opacity: 0.6;
-  object-fit: contain;   /* preserve proportions */
-  margin: 0 auto;
-  right: 0;
-}
-
-
-  /* 🎛️ Buttons layout */
-  #buttons {
-    position: absolute;
-    bottom: 70px;
-    width: 100%;
-    text-align: center;
-    z-index: 5;
-  }
-
-  button {
-    margin: 0 10px;
-    padding: 12px 26px;
-    font-size: 18px;
-    border: none;
-    background: rgba(0, 115, 230, 0.9);
-    color: white;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-
-  button:hover { background: rgba(0, 91, 181, 0.9); }
-
-  #statusMsg {
-    position: absolute;
-    bottom: 35px;
-    width: 100%;
-    text-align: center;
-    font-size: 16px;
-    color: #fff;
-  }
-
-  #returnBtn {
-    display: none;
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #00356b;
-    font-size: 16px;
-  }
-
-  h3 {
-    margin: 12px 0;
-    font-weight: normal;
-    color: #ddd;
-  }
-
-  /* 🧩 On desktop: reduce height a bit for aesthetics */
-  @media (min-width: 800px) {
-    #camera-container {
-      height: 75vh;
-      margin-top: 20px;
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      color: white;
     }
-  }
-</style>
 
+    header {
+      background: #00356b;
+      color: white;
+      padding: 10px 0;
+      font-size: 18px;
+      text-align: center;
+    }
 
+    /* Camera container */
+    #camera-container {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      height: 88vh;
+      margin: 0 auto;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+    }
 
+    video, #photo {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
 
+    #hand-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    /* Buttons */
+    #buttons {
+      position: absolute;
+      bottom: 70px;
+      width: 100%;
+      text-align: center;
+      z-index: 5;
+    }
+
+    button {
+      margin: 0 10px;
+      padding: 12px 26px;
+      font-size: 18px;
+      border: none;
+      background: rgba(0,115,230,0.9);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { background: rgba(0,91,181,0.9); }
+
+    #statusMsg {
+      position: absolute;
+      bottom: 35px;
+      width: 100%;
+      text-align: center;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    #returnBtn {
+      display: none;
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #00356b;
+      font-size: 16px;
+    }
+
+    h3 {
+      margin: 12px 0;
+      font-weight: normal;
+      color: #ddd;
+    }
+
+    @media (min-width: 800px) {
+      #camera-container {
+        height: 75vh;
+        margin-top: 20px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-  <header> Hand Image Capture</header>
+  <header>Hand Image Capture</header>
 
   <h3>Place your hand inside the outline and take a photo</h3>
 
@@ -140,25 +128,26 @@
   <p id="statusMsg"></p>
 
   <button id="returnBtn"
-  style="background:#00356b;color:white;border:none;
-         border-radius:8px;padding:10px 20px;font-size:16px;
-         margin-top:20px;display:none;cursor:pointer;">
-  Return to Survey
-</button>
-
+    style="background:#00356b;color:white;border:none;
+           border-radius:8px;padding:10px 20px;font-size:16px;
+           margin-top:20px;display:none;cursor:pointer;">
+    Return to Survey
+  </button>
 
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const photo = document.getElementById('photo');
+    const overlay = document.getElementById('hand-overlay');
     const captureBtn = document.getElementById('captureBtn');
     const retakeBtn = document.getElementById('retakeBtn');
     const downloadBtn = document.getElementById('downloadBtn');
+    const returnBtn = document.getElementById('returnBtn');
     const statusMsg = document.getElementById('statusMsg');
 
-    const surveyURL = "https://surveys.tilburguniversity.edu/jfe/form/SV_dck2rt6tnkttf2C "; // 
+    const surveyURL = "https://surveys.tilburguniversity.edu/jfe/form/SV_dck2rt6tnkttf2C";
 
-    // Request camera access at high resolution
+    // Request camera access
     navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: "environment",
@@ -169,6 +158,18 @@
     .then(stream => {
       video.srcObject = stream;
       return video.play();
+    })
+    .then(() => {
+      // 🧩 Match overlay to actual video dimensions
+      function resizeOverlay() {
+        const rect = video.getBoundingClientRect();
+        overlay.style.width = rect.width + "px";
+        overlay.style.height = rect.height + "px";
+        overlay.style.top = rect.top + "px";
+        overlay.style.left = rect.left + "px";
+      }
+      resizeOverlay();
+      window.addEventListener('resize', resizeOverlay);
     })
     .catch(err => alert("Camera access denied: " + err));
 
@@ -182,6 +183,7 @@
       // Show captured photo
       photo.src = canvas.toDataURL('image/png'); // PNG = no compression
       video.style.display = 'none';
+      overlay.style.display = 'none';
       photo.style.display = 'block';
       captureBtn.style.display = 'none';
       retakeBtn.style.display = 'inline-block';
@@ -193,6 +195,7 @@
     retakeBtn.addEventListener('click', () => {
       photo.style.display = 'none';
       video.style.display = 'block';
+      overlay.style.display = 'block';
       captureBtn.style.display = 'inline-block';
       retakeBtn.style.display = 'none';
       downloadBtn.style.display = 'none';
@@ -200,39 +203,24 @@
     });
 
     // --- Download ---
-downloadBtn.addEventListener('click', () => {
-  const dataURL = canvas.toDataURL('image/png');
-  const link = document.createElement('a');
-  link.href = dataURL;
-  link.download = 'hand_photo.png';
-  link.click();
+    downloadBtn.addEventListener('click', () => {
+      const dataURL = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = 'hand_photo.png';
+      link.click();
 
-  // Show feedback & reveal "Continue" button
-  statusMsg.textContent = "Photo saved! Tap below to continue to the survey.";
-  downloadBtn.style.display = 'none';
-  returnBtn.textContent = "Continue to Survey";
-  returnBtn.style.display = 'inline-block';
-});
+      // Show feedback & reveal "Continue" button
+      statusMsg.textContent = "Photo saved! Tap below to continue to the survey.";
+      downloadBtn.style.display = 'none';
+      returnBtn.textContent = "Continue to Survey";
+      returnBtn.style.display = 'inline-block';
+    });
 
-// --- Return to Survey (user-initiated, Safari-safe) ---
-returnBtn.addEventListener('click', () => {
-  window.location.href = surveyURL;
-});
-
-
+    // --- Return to Survey (Safari-safe) ---
+    returnBtn.addEventListener('click', () => {
+      window.location.href = surveyURL;
+    });
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
