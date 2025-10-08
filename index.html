@@ -77,6 +77,14 @@
 
   <p id="statusMsg"></p>
 
+  <button id="returnBtn"
+  style="background:#00356b;color:white;border:none;
+         border-radius:8px;padding:10px 20px;font-size:16px;
+         margin-top:20px;display:none;cursor:pointer;">
+  Return to Survey
+</button>
+
+
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
@@ -129,17 +137,25 @@
       statusMsg.textContent = "";
     });
 
-    // --- Download & Return ---
-    downloadBtn.addEventListener('click', () => {
-      const dataURL = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = dataURL;
-      link.download = 'hand_photo.png';
-      link.click();
+    // --- Download ---
+  downloadBtn.addEventListener('click', () => {
+    const dataURL = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = 'hand_photo.png';
+    link.click();
+  
+    statusMsg.textContent = "✅ Photo saved! Tap below to return to the survey.";
+    downloadBtn.style.display = 'none';
+    returnBtn.style.display = 'inline-block';
+  });
+  
+  // --- Return to Survey ---
+  returnBtn.addEventListener('click', () => {
+    window.location.href = surveyURL;
+  });
 
-      statusMsg.textContent = "✅ Photo saved! Returning to survey...";
-      setTimeout(() => { window.location.href = surveyURL; }, 3000);
-    });
   </script>
 </body>
 </html>
+
