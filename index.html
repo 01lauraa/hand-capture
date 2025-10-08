@@ -10,7 +10,7 @@
     height: 100%;
     width: 100%;
     background: #000;
-    overflow: hidden;
+    overflow-x: hidden;
     font-family: Arial, sans-serif;
     color: white;
   }
@@ -26,8 +26,13 @@
   #camera-container {
     position: relative;
     width: 100%;
-    height: calc(100vh - 50px); /* full screen minus header */
+    max-width: 600px;         /* limit width so it doesn’t stretch too far */
+    aspect-ratio: 4/3;        /* keeps natural camera proportions */
+    margin: 20px auto 0 auto; /* centers it with top margin */
+    border: 2px solid #222;
+    border-radius: 12px;
     overflow: hidden;
+    background: #000;
   }
 
   video, #photo {
@@ -35,9 +40,7 @@
     top: 0; left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* fills the screen nicely */
-    border: none;
-    border-radius: 0;
+    object-fit: cover;        /* fill the box nicely */
   }
 
   #hand-overlay {
@@ -51,50 +54,45 @@
   }
 
   #buttons {
-    position: absolute;
-    bottom: 80px;
-    width: 100%;
+    margin-top: 15px;
     text-align: center;
-    z-index: 10;
   }
 
   button {
     margin: 0 10px;
-    padding: 12px 24px;
-    font-size: 18px;
+    padding: 10px 20px;
+    font-size: 17px;
     border: none;
-    background: rgba(0, 115, 230, 0.85);
+    background: #0073e6;
     color: white;
     border-radius: 8px;
     cursor: pointer;
-    backdrop-filter: blur(4px);
   }
 
-  button:hover { background: rgba(0, 91, 181, 0.85); }
+  button:hover { background: #005bb5; }
 
   #statusMsg {
-    position: absolute;
-    bottom: 45px;
-    width: 100%;
+    margin-top: 10px;
     text-align: center;
-    font-size: 16px;
+    font-size: 15px;
     color: white;
   }
 
   #returnBtn {
     display: none;
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    margin: 15px auto;
     background: #00356b;
     font-size: 16px;
   }
 
   h3 {
-    display: none; /* hide header text to make it feel full-screen */
+    margin-top: 10px;
+    font-size: 17px;
+    font-weight: normal;
+    color: #ddd;
   }
 </style>
+
 
 </head>
 <body>
@@ -201,6 +199,7 @@ returnBtn.addEventListener('click', () => {
   </script>
 </body>
 </html>
+
 
 
 
