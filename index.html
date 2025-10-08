@@ -4,58 +4,98 @@
   <meta charset="UTF-8">
   <title>Tilburg Hand Capture Tool</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-      background: #fafafa;
-    }
-    header {
-      background: #00356b;
-      color: white;
-      padding: 12px 0;
-      font-size: 18px;
-      letter-spacing: 0.5px;
-    }
-    #camera-container {
-      position: relative;
-      width: 100%;
-      max-width: 400px;
-      margin: 20px auto;
-    }
-    video, img {
-      width: 100%;
-      border: 2px solid #ccc;
-      border-radius: 10px;
-    }
-    #hand-overlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-      opacity: 0.7;
-    }
-    button {
-      margin: 10px 5px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      background: #0073e6;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:hover { background: #005bb5; }
-    #photo {
-      margin-top: 15px;
-      display: none;
-    }
-    #statusMsg {
-      margin-top: 20px;
-      font-size: 15px;
-      color: #333;
-    }
-  </style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    color: white;
+  }
+
+  header {
+    background: #00356b;
+    color: white;
+    padding: 10px 0;
+    font-size: 18px;
+    text-align: center;
+  }
+
+  #camera-container {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 50px); /* full screen minus header */
+    overflow: hidden;
+  }
+
+  video, #photo {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* fills the screen nicely */
+    border: none;
+    border-radius: 0;
+  }
+
+  #hand-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.6;
+    object-fit: cover;
+  }
+
+  #buttons {
+    position: absolute;
+    bottom: 80px;
+    width: 100%;
+    text-align: center;
+    z-index: 10;
+  }
+
+  button {
+    margin: 0 10px;
+    padding: 12px 24px;
+    font-size: 18px;
+    border: none;
+    background: rgba(0, 115, 230, 0.85);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+  }
+
+  button:hover { background: rgba(0, 91, 181, 0.85); }
+
+  #statusMsg {
+    position: absolute;
+    bottom: 45px;
+    width: 100%;
+    text-align: center;
+    font-size: 16px;
+    color: white;
+  }
+
+  #returnBtn {
+    display: none;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #00356b;
+    font-size: 16px;
+  }
+
+  h3 {
+    display: none; /* hide header text to make it feel full-screen */
+  }
+</style>
+
 </head>
 <body>
   <header> Hand Image Capture</header>
@@ -161,6 +201,7 @@ returnBtn.addEventListener('click', () => {
   </script>
 </body>
 </html>
+
 
 
 
