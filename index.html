@@ -138,24 +138,28 @@
     });
 
     // --- Download ---
-  downloadBtn.addEventListener('click', () => {
-    const dataURL = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.href = dataURL;
-    link.download = 'hand_photo.png';
-    link.click();
-  
-    statusMsg.textContent = "✅ Photo saved! Tap below to return to the survey.";
-    downloadBtn.style.display = 'none';
-    returnBtn.style.display = 'inline-block';
-  });
-  
-  // --- Return to Survey ---
-  returnBtn.addEventListener('click', () => {
-    window.location.href = surveyURL;
-  });
+downloadBtn.addEventListener('click', () => {
+  const dataURL = canvas.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.href = dataURL;
+  link.download = 'hand_photo.png';
+  link.click();
+
+  // Show feedback & reveal "Continue" button
+  statusMsg.textContent = "✅ Photo saved! Tap below to continue to the survey.";
+  downloadBtn.style.display = 'none';
+  returnBtn.textContent = "Continue to Survey";
+  returnBtn.style.display = 'inline-block';
+});
+
+// --- Return to Survey (user-initiated, Safari-safe) ---
+returnBtn.addEventListener('click', () => {
+  window.location.href = surveyURL;
+});
+
 
   </script>
 </body>
 </html>
+
 
