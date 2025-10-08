@@ -23,7 +23,6 @@
       text-align: center;
     }
 
-    /* Camera container */
     #camera-container {
       position: relative;
       width: 100%;
@@ -44,15 +43,18 @@
       object-fit: cover;
     }
 
+    /* ✅ Overlay aligned with camera */
     #hand-overlay {
       position: absolute;
       top: 0;
       left: 0;
+      width: 100%;
+      height: 100%;
       pointer-events: none;
       opacity: 0.6;
+      object-fit: contain;
     }
 
-    /* Buttons */
     #buttons {
       position: absolute;
       bottom: 70px;
@@ -71,6 +73,7 @@
       border-radius: 8px;
       cursor: pointer;
     }
+
     button:hover { background: rgba(0,91,181,0.9); }
 
     #statusMsg {
@@ -144,10 +147,11 @@
     const downloadBtn = document.getElementById('downloadBtn');
     const returnBtn = document.getElementById('returnBtn');
     const statusMsg = document.getElementById('statusMsg');
+    const container = document.getElementById('camera-container');
 
     const surveyURL = "https://surveys.tilburguniversity.edu/jfe/form/SV_dck2rt6tnkttf2C";
 
-    // Request camera access
+    // 📸 Camera access
     navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: "environment",
@@ -160,28 +164,25 @@
       return video.play();
     })
     .then(() => {
-      // 🧩 Match overlay to actual video dimensions
+      // 🧩 Keep overlay aligned with camera container
       function resizeOverlay() {
-        const rect = video.getBoundingClientRect();
-        overlay.style.width = rect.width + "px";
-        overlay.style.height = rect.height + "px";
-        overlay.style.top = rect.top + "px";
-        overlay.style.left = rect.left + "px";
+        overlay.style.width = container.clientWidth + "px";
+        overlay.style.height = container.clientHeight + "px";
       }
       resizeOverlay();
       window.addEventListener('resize', resizeOverlay);
     })
     .catch(err => alert("Camera access denied: " + err));
 
-    // --- Take photo ---
+    // --- Take Photo ---
     captureBtn.addEventListener('click', () => {
       const ctx = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // Show captured photo
-      photo.src = canvas.toDataURL('image/png'); // PNG = no compression
+      // Show preview
+      photo.src = canvas.toDataURL('image/png');
       video.style.display = 'none';
       overlay.style.display = 'none';
       photo.style.display = 'block';
@@ -210,14 +211,21 @@
       link.download = 'hand_photo.png';
       link.click();
 
-      // Show feedback & reveal "Continue" button
-      statusMsg.textContent = "✅ Photo saved! Tap below to continue to the survey.";
+      // ✅ Hide Retake & Download
+      retakeBtn.style.display = 'none';
       downloadBtn.style.display = 'none';
+
+      // 🔒 Prevent reappearing on resize
+      retakeBtn.classList.add('hidden');
+      downloadBtn.classList.add('hidden');
+
+      // ✅ Show Continue to Survey
+      statusMsg.textContent = "✅ Photo saved! Tap below to continue to the survey.";
       returnBtn.textContent = "Continue to Survey";
       returnBtn.style.display = 'inline-block';
     });
 
-    // --- Return to Survey (Safari-safe) ---
+    // --- Return to Survey ---
     returnBtn.addEventListener('click', () => {
       window.location.href = surveyURL;
     });
