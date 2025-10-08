@@ -23,7 +23,6 @@
       text-align: center;
     }
 
-    /* Camera container */
     #camera-container {
       position: relative;
       width: 100%;
@@ -52,7 +51,6 @@
       opacity: 0.6;
     }
 
-    /* Buttons */
     #buttons {
       position: absolute;
       bottom: 70px;
@@ -71,6 +69,7 @@
       border-radius: 8px;
       cursor: pointer;
     }
+
     button:hover { background: rgba(0,91,181,0.9); }
 
     #statusMsg {
@@ -160,7 +159,7 @@
       return video.play();
     })
     .then(() => {
-      // 🧩 Match overlay to actual video dimensions
+      // 🧩 Match overlay size to video dynamically
       function resizeOverlay() {
         const rect = video.getBoundingClientRect();
         overlay.style.width = rect.width + "px";
@@ -210,14 +209,15 @@
       link.download = 'hand_photo.png';
       link.click();
 
-      // Show feedback & reveal "Continue" button
-      statusMsg.textContent = "Photo saved! Tap below to continue to the survey.";
+      // Hide Retake + Download buttons and show Continue
+      retakeBtn.style.display = 'none';
       downloadBtn.style.display = 'none';
+      statusMsg.textContent = "✅ Photo saved! Tap below to continue to the survey.";
       returnBtn.textContent = "Continue to Survey";
       returnBtn.style.display = 'inline-block';
     });
 
-    // --- Return to Survey (Safari-safe) ---
+    // --- Return to Survey ---
     returnBtn.addEventListener('click', () => {
       window.location.href = surveyURL;
     });
