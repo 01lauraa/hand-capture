@@ -258,22 +258,32 @@
     }
 
     function decodeYOLO(arr, modelSize, imgW, imgH, confThr) {
-      const boxes = [];
-      const nPreds = arr.length / 5;
-      for (let i = 0; i < nPreds; i++) {
-        const off = i * 5;
-        const conf = arr[off + 4];
-        if (conf > confThr) {
-          const cx = arr[off + 0], cy = arr[off + 1], w = arr[off + 2], h = arr[off + 3];
-          const x1 = (cx - w/2) * imgW / modelSize;
-          const y1 = (cy - h/2) * imgH / modelSize;
-          const x2 = (cx + w/2) * imgW / modelSize;
-          const y2 = (cy + h/2) * imgH / modelSize;
-          boxes.push({ x1, y1, x2, y2, conf, cx, cy });
-        }
-      }
-      return boxes;
+  const boxes = [];
+  const nPreds = arr.length / 5;
+  for (let i = 0; i < nPreds; i++) {
+    const off = i * 5;
+    const conf = arr[off + 4];
+    if (conf > confThr) {
+      // YOLO ONNX exports often output absolute coordinates already
+      const cx = arr[off + 0];
+      const cy = arr[off + 1];
+      const w = arr[off + 2];
+      const h = arr[off + 3];
+
+      // If coordinates look normalized (<1), scale up to image size
+      const scale = cx < 2 && cy < 2 ? imgW : 1;
+
+      const x1 = (cx - w / 2) * scale;
+      const y1 = (cy - h / 2) * (scale === imgW ? imgH : 1);
+      const x2 = (cx + w / 2) * scale;
+      const y2 = (cy + h / 2) * (scale === imgW ? imgH : 1);
+
+      boxes.push({ x1, y1, x2, y2, conf, cx, cy });
     }
+  }
+  return boxes;
+}
+
 
     function drawBoxes(img, boxes) {
       // Sort by confidence (descending)
