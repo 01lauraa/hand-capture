@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Hand Image Capture</title>
+  <title>Place your hand inside the outline and take a photo</title>
   <style>
     html, body {
       margin: 0;
@@ -112,13 +112,11 @@
 <body>
   <header>Hand Image Capture</header>
 
-  <h3>Place your hand inside the outline and take a photo</h3>
-
   <div id="camera-container">
     <video id="video" autoplay playsinline muted></video>
     <img src="hand_outline_clean1.png" id="hand-overlay" alt="Overlay guide">
     <canvas id="canvas" style="display:none;"></canvas>
-    <img id="photo" alt="Your captured photo preview">
+    <img id="photo">
   </div>
 
   <div id="buttons">
@@ -231,5 +229,6 @@
   </script>
 </body>
 </html>
+
 
 
