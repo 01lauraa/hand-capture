@@ -108,7 +108,7 @@
     }
   </style>
 
-  <!-- Load ONNX Runtime Web -->
+  <!-- ONNX Runtime for browser -->
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.0/dist/ort.min.js"></script>
 </head>
 
@@ -140,7 +140,7 @@
   </button>
 
   <script>
-    // ====== DOM elements ======
+    // ===== DOM elements =====
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const photo = document.getElementById('photo');
@@ -153,7 +153,7 @@
     const container = document.getElementById('camera-container');
     const surveyURL = "https://surveys.tilburguniversity.edu/jfe/form/SV_dck2rt6tnkttf2C";
 
-    // ====== YOLO model setup ======
+    // ===== YOLO setup =====
     const modelPath = "assets/model/last.onnx";
     let session = null;
 
@@ -168,7 +168,7 @@
     }
     loadModel();
 
-    // ====== Camera access ======
+    // ===== Camera setup =====
     navigator.mediaDevices.getUserMedia({
       video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
     })
@@ -186,7 +186,7 @@
     })
     .catch(err => alert("Camera access denied: " + err));
 
-    // ====== Capture photo ======
+    // ===== Capture photo =====
     captureBtn.addEventListener('click', () => {
       const ctx = canvas.getContext('2d');
       canvas.width = video.videoWidth;
@@ -203,7 +203,7 @@
       photo.onload = () => { if (session) runDetection(photo); };
     });
 
-    // ====== Retake ======
+    // ===== Retake =====
     retakeBtn.addEventListener('click', () => {
       photo.style.display = 'none';
       video.style.display = 'block';
@@ -214,7 +214,7 @@
       statusMsg.textContent = "";
     });
 
-    // ====== Download ======
+    // ===== Download =====
     downloadBtn.addEventListener('click', () => {
       const link = document.createElement('a');
       link.href = photo.src;
@@ -227,17 +227,17 @@
       returnBtn.style.display = 'inline-block';
     });
 
-    // ====== Return to survey ======
+    // ===== Return to survey =====
     returnBtn.addEventListener('click', () => {
       window.location.href = surveyURL;
     });
 
-    // ====== YOLO helper functions ======
+    // ===== YOLO functions =====
     async function runDetection(img) {
       const tensor = await imageToTensor(img, 640);
       const output = await session.run({ images: tensor });
       const key = Object.keys(output)[0];
-      const boxes = decodeYOLO(output[key].data, 640, img.width, img.height, 0.25);
+      const boxes = decodeYOLO(output[key].data, 640, img.width, img.height, 0.15);
       drawBoxes(img, boxes);
     }
 
@@ -269,13 +269,42 @@
           const y1 = (cy - h/2) * imgH / modelSize;
           const x2 = (cx + w/2) * imgW / modelSize;
           const y2 = (cy + h/2) * imgH / modelSize;
-          boxes.push({ x1, y1, x2, y2, conf });
+          boxes.push({ x1, y1, x2, y2, conf, cx, cy });
         }
       }
       return boxes;
     }
 
     function drawBoxes(img, boxes) {
+      // Sort by confidence (descending)
+      boxes.sort((a, b) => b.conf - a.conf);
+
+      // Compute image center
+      const centerX = img.width / 2;
+      const centerY = img.height / 2;
+
+      // If multiple with same confidence, prefer the one most central
+      if (boxes.length > 1) {
+        boxes.sort((a, b) => {
+          const da = Math.hypot(a.cx * img.width / 640 - centerX, a.cy * img.height / 640 - centerY);
+          const db = Math.hypot(b.cx * img.width / 640 - centerX, b.cy * img.height / 640 - centerY);
+          return da - db; // prefer closer to center
+        });
+      }
+
+      // Apply rule: 1 or 4 nails
+      let finalBoxes = [];
+      if (boxes.length === 4 || boxes.length === 1) {
+        finalBoxes = boxes;
+      } else if (boxes.length > 4) {
+        finalBoxes = boxes.slice(0, 4);
+      } else if (boxes.length === 2 || boxes.length === 3) {
+        finalBoxes = [boxes[0]];
+      } else {
+        statusMsg.textContent = "No nails detected ❌";
+      }
+
+      // Draw selected boxes
       const canvasDet = document.createElement('canvas');
       canvasDet.width = img.width;
       canvasDet.height = img.height;
@@ -285,12 +314,12 @@
       ctx.strokeStyle = 'lime';
       ctx.font = '20px Arial';
       ctx.fillStyle = 'lime';
-      boxes.forEach(b => {
+      finalBoxes.forEach(b => {
         ctx.strokeRect(b.x1, b.y1, b.x2 - b.x1, b.y2 - b.y1);
         ctx.fillText('Nail ' + b.conf.toFixed(2), b.x1 + 4, b.y1 + 22);
       });
       photo.src = canvasDet.toDataURL('image/png');
-      statusMsg.textContent = `Detected ${boxes.length} nails ✅`;
+      statusMsg.textContent = `Detected ${finalBoxes.length} nail(s) ✅`;
     }
   </script>
 </body>
