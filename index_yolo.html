@@ -73,7 +73,9 @@
       cursor: pointer;
     }
 
-    button:hover { background: rgba(0,91,181,0.9); }
+    button:hover {
+      background: rgba(0,91,181,0.9);
+    }
 
     #statusMsg {
       position: absolute;
@@ -258,32 +260,34 @@
     }
 
     function decodeYOLO(arr, modelSize, imgW, imgH, confThr) {
-  const boxes = [];
-  const nPreds = arr.length / 5;
-  for (let i = 0; i < nPreds; i++) {
-    const off = i * 5;
-    const conf = arr[off + 4];
-    if (conf > confThr) {
-      // YOLO ONNX exports often output absolute coordinates already
-      const cx = arr[off + 0];
-      const cy = arr[off + 1];
-      const w = arr[off + 2];
-      const h = arr[off + 3];
+      const boxes = [];
+      const nPreds = arr.length / 5;
 
-      // If coordinates look normalized (<1), scale up to image size
-      const scale = cx < 2 && cy < 2 ? imgW : 1;
+      for (let i = 0; i < nPreds; i++) {
+        const off = i * 5;
+        const conf = arr[off + 4];
 
-      const x1 = (cx - w / 2) * scale;
-      const y1 = (cy - h / 2) * (scale === imgW ? imgH : 1);
-      const x2 = (cx + w / 2) * scale;
-      const y2 = (cy + h / 2) * (scale === imgW ? imgH : 1);
+        if (conf > confThr) {
+          // YOLO ONNX exports often output absolute coordinates already
+          const cx = arr[off + 0];
+          const cy = arr[off + 1];
+          const w = arr[off + 2];
+          const h = arr[off + 3];
 
-      boxes.push({ x1, y1, x2, y2, conf, cx, cy });
+          // If coordinates look normalized (<1), scale up to image size
+          const scale = (cx < 2 && cy < 2) ? imgW : 1;
+
+          const x1 = (cx - w / 2) * scale;
+          const y1 = (cy - h / 2) * (scale === imgW ? imgH : 1);
+          const x2 = (cx + w / 2) * scale;
+          const y2 = (cy + h / 2) * (scale === imgW ? imgH : 1);
+
+          boxes.push({ x1, y1, x2, y2, conf, cx, cy });
+        }
+      }
+
+      return boxes;
     }
-  }
-  return boxes;
-}
-
 
     function drawBoxes(img, boxes) {
       // Sort by confidence (descending)
@@ -293,16 +297,16 @@
       const centerX = img.width / 2;
       const centerY = img.height / 2;
 
-      // If multiple with same confidence, prefer the one most central
+      // Prefer boxes closer to center when same confidence
       if (boxes.length > 1) {
         boxes.sort((a, b) => {
           const da = Math.hypot(a.cx * img.width / 640 - centerX, a.cy * img.height / 640 - centerY);
           const db = Math.hypot(b.cx * img.width / 640 - centerX, b.cy * img.height / 640 - centerY);
-          return da - db; // prefer closer to center
+          return da - db;
         });
       }
 
-      // Apply rule: 1 or 4 nails
+      // Apply rule: 1 or 4 nails only
       let finalBoxes = [];
       if (boxes.length === 4 || boxes.length === 1) {
         finalBoxes = boxes;
@@ -328,6 +332,7 @@
         ctx.strokeRect(b.x1, b.y1, b.x2 - b.x1, b.y2 - b.y1);
         ctx.fillText('Nail ' + b.conf.toFixed(2), b.x1 + 4, b.y1 + 22);
       });
+
       photo.src = canvasDet.toDataURL('image/png');
       statusMsg.textContent = `Detected ${finalBoxes.length} nail(s) ✅`;
     }
