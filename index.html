@@ -43,7 +43,6 @@
       object-fit: cover;
     }
 
-    /* ✅ Overlay aligned with camera */
     #hand-overlay {
       position: absolute;
       top: 0;
@@ -151,7 +150,7 @@
 
     const surveyURL = "https://surveys.tilburguniversity.edu/jfe/form/SV_dck2rt6tnkttf2C";
 
-    // 📸 Camera access
+    // Camera access
     navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: "environment",
@@ -164,7 +163,7 @@
       return video.play();
     })
     .then(() => {
-      // 🧩 Keep overlay aligned with camera container
+      // Keep overlay aligned with camera container
       function resizeOverlay() {
         overlay.style.width = container.clientWidth + "px";
         overlay.style.height = container.clientHeight + "px";
@@ -211,15 +210,15 @@
       link.download = 'hand_photo.png';
       link.click();
 
-      // ✅ Hide Retake & Download
+      // Hide Retake & Download
       retakeBtn.style.display = 'none';
       downloadBtn.style.display = 'none';
 
-      // 🔒 Prevent reappearing on resize
+      // Prevent reappearing on resize
       retakeBtn.classList.add('hidden');
       downloadBtn.classList.add('hidden');
 
-      // ✅ Show Continue to Survey
+      // Show Continue to Survey
       statusMsg.textContent = "Photo saved! Tap below to continue to the survey.";
       returnBtn.textContent = "Continue to Survey";
       returnBtn.style.display = 'inline-block';
@@ -232,4 +231,5 @@
   </script>
 </body>
 </html>
+
 
