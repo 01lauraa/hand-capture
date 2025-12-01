@@ -43,22 +43,19 @@
       object-fit: cover;
     }
 
-    /* NEW: CSS-based rectangle overlay */
-    #overlay-rect {
+    /* === PNG OVERLAY (from Python) === */
+    #hand-overlay {
       position: absolute;
-      border: 6px solid rgba(255,255,255,0.85);
-      border-radius: 14px;
-
-      /* === MODIFY THESE PERCENTAGES === */
-      top: 12.48%;       /* vertical position */
-      transform: translateX(-50%);   /* Pull rectangle back by half its width */
-      width: 96.03%;     /* horizontal position */
-      width: 96.03%;     /* rectangle width */
-      height: 87.38%;    /* rectangle height */
-      /* ================================= */
-
+      top: 12.48%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96.03%;
+      height: 87.38%;
+      object-fit: contain;
+      opacity: 1.0;
       pointer-events: none;
       z-index: 10;
+      display: block;
     }
 
     #buttons {
@@ -80,7 +77,9 @@
       cursor: pointer;
     }
 
-    button:hover { background: rgba(0,91,181,0.9); }
+    button:hover {
+      background: rgba(0,91,181,0.9);
+    }
 
     #statusMsg {
       position: absolute;
@@ -101,12 +100,6 @@
       font-size: 16px;
     }
 
-    h3 {
-      margin: 12px 0;
-      font-weight: normal;
-      color: #ddd;
-    }
-
     @media (min-width: 800px) {
       #camera-container {
         height: 75vh;
@@ -122,9 +115,8 @@
   <div id="camera-container">
     <video id="video" autoplay playsinline muted></video>
 
-    <!-- CSS rectangle overlay -->
-    <img id="hand-overlay" src="overlay_output.png">
-
+    <!-- PNG overlay exported from Python -->
+    <img id="hand-overlay" src="overlay_output.png" alt="Overlay guide">
 
     <canvas id="canvas" style="display:none;"></canvas>
     <img id="photo">
@@ -138,17 +130,15 @@
 
   <p id="statusMsg"></p>
 
-  <button id="returnBtn"
-    style="background:#00356b;color:white;border:none;
-           border-radius:8px;padding:10px 20px;font-size:16px;
-           margin-top:20px;display:none;cursor:pointer;">
+  <button id="returnBtn">
     Return to Survey
   </button>
 
   <script>
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const photo = document.getElementById('photo');
+    const photo   = document.getElementById('photo');
+    const overlay = document.getElementById('hand-overlay');
     const captureBtn = document.getElementById('captureBtn');
     const retakeBtn = document.getElementById('retakeBtn');
     const downloadBtn = document.getElementById('downloadBtn');
@@ -157,7 +147,7 @@
 
     const surveyURL = "https://surveys.tilburguniversity.edu/jfe/form/SV_dck2rt6tnkttf2C";
 
-    // Camera access
+    // Access camera
     navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: "environment",
@@ -171,58 +161,57 @@
     })
     .catch(err => alert("Camera access denied: " + err));
 
-    // --- Take Photo ---
+    // Take photo
     captureBtn.addEventListener('click', () => {
       const ctx = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // Show preview
       photo.src = canvas.toDataURL('image/png');
+
       video.style.display = 'none';
-      document.getElementById('overlay-rect').style.display = 'none';
+      overlay.style.display = 'none';
       photo.style.display = 'block';
+
       captureBtn.style.display = 'none';
       retakeBtn.style.display = 'inline-block';
       downloadBtn.style.display = 'inline-block';
-      statusMsg.textContent = "If you're happy with this photo, download and return to the survey.";
+
+      statusMsg.textContent = "If you're happy with the photo, download and continue.";
     });
 
-    // --- Retake ---
+    // Retake
     retakeBtn.addEventListener('click', () => {
       photo.style.display = 'none';
       video.style.display = 'block';
-      document.getElementById('overlay-rect').style.display = 'block';
+      overlay.style.display = 'block';
       captureBtn.style.display = 'inline-block';
       retakeBtn.style.display = 'none';
       downloadBtn.style.display = 'none';
       statusMsg.textContent = "";
     });
 
-    // --- Download ---
+    // Download
     downloadBtn.addEventListener('click', () => {
-      const dataURL = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.href = dataURL;
+      link.href = canvas.toDataURL('image/png');
       link.download = 'hand_photo.png';
       link.click();
 
       retakeBtn.style.display = 'none';
       downloadBtn.style.display = 'none';
 
-      statusMsg.textContent = "Photo saved! Tap below to continue to the survey.";
+      statusMsg.textContent = "Photo saved! Continue to the survey.";
       returnBtn.textContent = "Continue to Survey";
       returnBtn.style.display = 'inline-block';
     });
 
-    // --- Return to Survey ---
+    // Return to survey
     returnBtn.addEventListener('click', () => {
       window.location.href = surveyURL;
     });
   </script>
+
 </body>
 </html>
-
-
-
