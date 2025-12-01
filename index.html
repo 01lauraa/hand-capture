@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Place your hand inside the outline and take a photo</title>
-
   <style>
     html, body {
       margin: 0;
@@ -24,48 +23,49 @@
       text-align: center;
     }
 
-    /* IMPORTANT: match camera aspect ratio (4:3 real camera) */
+    /* Camera area */
     #camera-container {
       position: relative;
       width: 100%;
       max-width: 800px;
-      aspect-ratio: 3 / 4;
+      height: 88vh;          /* fixed height */
       margin: 0 auto;
-      background: #000;
       border-radius: 10px;
       overflow: hidden;
+      background: #000;
     }
 
-    video, #photo {
+    /* Video, photo preview, and overlay all share same box */
+    video,
+    #photo,
+    #hand-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;  /* MUST MATCH PNG */
-      background: black;     /* avoids stretching artifacts */
+      object-fit: cover;      /* or 'contain', but same for all three */
     }
 
-    /* PNG overlay (contains all 6 rectangles) */
     #hand-overlay {
-      position: absolute;
-
-      /* === INSERT YOUR OUTER RECTANGLE PERCENTAGES HERE === */
-      top: 11.38%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 94.38%;
-      height: 87.38%;
-      /* ===================================================== */
-
-      object-fit: contain;
       pointer-events: none;
-      z-index: 20;
+      z-index: 10;
+      opacity: 1;
+      display: block;
+    }
+
+    #photo {
+      display: none;          /* hidden until after capture */
+      z-index: 5;
+    }
+
+    video {
+      z-index: 1;
     }
 
     #buttons {
       text-align: center;
-      margin-top: 20px;
+      margin-top: 15px;
     }
 
     button {
@@ -79,81 +79,110 @@
       cursor: pointer;
     }
 
-    button:hover { background: rgba(0,91,181,0.9); }
+    button:hover {
+      background: rgba(0,91,181,0.9);
+    }
+
+    #statusMsg {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 16px;
+    }
+
   </style>
 </head>
 
 <body>
+  <header>Place your hand inside the outline and take a photo</header>
 
-<header>Place your hand inside the outline and take a photo</header>
+  <div id="camera-container">
+    <video id="video" autoplay playsinline muted></video>
 
-<div id="camera-container">
+    <!-- Your PNG overlay with all rectangles, full-screen over video -->
+    <img id="hand-overlay" src="overlay_output.png" alt="Overlay">
 
-  <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <img id="photo" alt="Captured photo">
+  </div>
 
-  <!-- Your PNG overlay with all rectangles -->
-  <img id="hand-overlay" src="overlay_output.png">
+  <div id="buttons">
+    <button id="captureBtn">Take Photo</button>
+    <button id="retakeBtn" style="display:none;">Retake</button>
+    <button id="downloadBtn" style="display:none;">Download</button>
+  </div>
 
-  <canvas id="canvas" style="display:none;"></canvas>
-  <img id="photo">
-</div>
+  <p id="statusMsg"></p>
 
-<div id="buttons">
-  <button id="captureBtn">Take Photo</button>
-  <button id="retakeBtn" style="display:none;">Retake</button>
-  <button id="downloadBtn" style="display:none;">Download</button>
-</div>
+  <script>
+    const video       = document.getElementById('video');
+    const canvas      = document.getElementById('canvas');
+    const photo       = document.getElementById('photo');
+    const overlay     = document.getElementById('hand-overlay');
+    const captureBtn  = document.getElementById('captureBtn');
+    const retakeBtn   = document.getElementById('retakeBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statusMsg   = document.getElementById('statusMsg');
 
-<script>
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  const photo = document.getElementById('photo');
-  const overlay = document.getElementById('hand-overlay');
-  const captureBtn = document.getElementById('captureBtn');
-  const retakeBtn = document.getElementById('retakeBtn');
-  const downloadBtn = document.getElementById('downloadBtn');
+    // Get camera
+    navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "environment",
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    })
+    .then(stream => {
+      video.srcObject = stream;
+      // important: explicitly play, especially on some mobile browsers
+      return video.play();
+    })
+    .catch(err => {
+      alert("Camera access denied: " + err);
+    });
 
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1080 } }
-  })
-  .then(stream => {
-    video.srcObject = stream;
-  })
-  .catch(err => alert("Camera access denied: " + err));
+    // Take photo
+    captureBtn.addEventListener('click', () => {
+      const ctx = canvas.getContext('2d');
+      canvas.width  = video.videoWidth || 1920;
+      canvas.height = video.videoHeight || 1080;
 
-  captureBtn.addEventListener('click', () => {
-    const ctx = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    photo.src = canvas.toDataURL('image/png');
-    video.style.display = 'none';
-    overlay.style.display = 'none';
-    photo.style.display = 'block';
+      const dataURL = canvas.toDataURL('image/png');
+      photo.src = dataURL;
 
-    captureBtn.style.display = 'none';
-    retakeBtn.style.display = 'inline-block';
-    downloadBtn.style.display = 'inline-block';
-  });
+      // Switch to photo preview
+      video.style.display   = 'none';
+      overlay.style.display = 'none';
+      photo.style.display   = 'block';
 
-  retakeBtn.addEventListener('click', () => {
-    video.style.display = 'block';
-    overlay.style.display = 'block';
-    photo.style.display = 'none';
+      captureBtn.style.display  = 'none';
+      retakeBtn.style.display   = 'inline-block';
+      downloadBtn.style.display = 'inline-block';
 
-    captureBtn.style.display = 'inline-block';
-    retakeBtn.style.display = 'none';
-    downloadBtn.style.display = 'none';
-  });
+      statusMsg.textContent = "If you're happy with this photo, download it or retake.";
+    });
 
-  downloadBtn.addEventListener('click', () => {
-    const a = document.createElement('a');
-    a.href = canvas.toDataURL("image/png");
-    a.download = "hand_photo.png";
-    a.click();
-  });
-</script>
+    // Retake
+    retakeBtn.addEventListener('click', () => {
+      photo.style.display   = 'none';
+      video.style.display   = 'block';
+      overlay.style.display = 'block';
 
+      captureBtn.style.display  = 'inline-block';
+      retakeBtn.style.display   = 'none';
+      downloadBtn.style.display = 'none';
+
+      statusMsg.textContent = "";
+    });
+
+    // Download
+    downloadBtn.addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'hand_photo.png';
+      a.click();
+    });
+  </script>
 </body>
 </html>
