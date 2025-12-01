@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Nail Capture</title>
-
+  <title>Place your hand inside the outline and take a photo</title>
   <style>
     html, body {
       margin: 0;
@@ -11,62 +10,66 @@
       height: 100%;
       width: 100%;
       background: #000;
+      overflow: hidden;
       font-family: Arial, sans-serif;
-      overflow-x: hidden;
-    }
-
-    header {
-      text-align: center;
-      padding: 10px;
-      font-size: 18px;
-      background: #00356b;
       color: white;
     }
 
-    /* CAMERA BOX IS LOCKED TO 4:3 */
+    header {
+      background: #00356b;
+      color: white;
+      padding: 10px 0;
+      font-size: 18px;
+      text-align: center;
+    }
+
     #camera-container {
       position: relative;
       width: 100%;
       max-width: 800px;
-      aspect-ratio: 3 / 4;
+      height: 88vh;
       margin: 0 auto;
       border-radius: 10px;
       overflow: hidden;
-      background: black;
+      background: #000;
     }
 
-    video, #photo, #hand-overlay {
+    video, #photo {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;  /* everything scales the same */
+      object-fit: cover;
     }
 
+    /* === PNG OVERLAY (from Python) === */
     #hand-overlay {
-      z-index: 10;
+      position: absolute;
+      top: 12.48%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96.03%;
+      height: 87.38%;
+      object-fit: contain;
+      opacity: 1.0;
       pointer-events: none;
-    }
-
-    #photo {
-      display: none;
-      z-index: 5;
-    }
-
-    video {
-      z-index: 1;
+      z-index: 10;
+      display: block;
     }
 
     #buttons {
+      position: absolute;
+      bottom: 70px;
+      width: 100%;
       text-align: center;
-      margin-top: 15px;
+      z-index: 5;
     }
 
     button {
+      margin: 0 10px;
       padding: 12px 26px;
       font-size: 18px;
-      margin: 0 10px;
       border: none;
       background: rgba(0,115,230,0.9);
       color: white;
@@ -79,123 +82,136 @@
     }
 
     #statusMsg {
+      position: absolute;
+      bottom: 35px;
+      width: 100%;
       text-align: center;
-      margin-top: 8px;
       font-size: 16px;
+      color: #fff;
+    }
+
+    #returnBtn {
+      display: none;
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #00356b;
+      font-size: 16px;
+    }
+
+    @media (min-width: 800px) {
+      #camera-container {
+        height: 75vh;
+        margin-top: 20px;
+      }
     }
   </style>
 </head>
 
 <body>
+  <header>Place your hand inside the outline and take a photo</header>
 
-<header>Place your hand inside the outline and take a photo</header>
+  <div id="camera-container">
+    <video id="video" autoplay playsinline muted></video>
 
-<div id="camera-container">
+    <!-- PNG overlay exported from Python -->
+    <img id="hand-overlay" src="overlay_output.png" alt="Overlay guide">
 
-  <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <img id="photo">
+  </div>
 
-  <!-- PNG overlay: FULL 4:3 IMAGE -->
-  <img id="hand-overlay" src="overlay_output.png">
+  <div id="buttons">
+    <button id="captureBtn">Take Photo</button>
+    <button id="retakeBtn" style="display:none;">Retake</button>
+    <button id="downloadBtn" style="display:none;">Download</button>
+  </div>
 
-  <canvas id="canvas" style="display:none;"></canvas>
-  <img id="photo">
-</div>
+  <p id="statusMsg"></p>
 
-<div id="buttons">
-  <button id="captureBtn">Take Photo</button>
-  <button id="retakeBtn" style="display:none;">Retake</button>
-  <button id="downloadBtn" style="display:none;">Download</button>
-</div>
+  <button id="returnBtn">
+    Return to Survey
+  </button>
 
-<p id="statusMsg"></p>
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const photo   = document.getElementById('photo');
+    const overlay = document.getElementById('hand-overlay');
+    const captureBtn = document.getElementById('captureBtn');
+    const retakeBtn = document.getElementById('retakeBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const returnBtn = document.getElementById('returnBtn');
+    const statusMsg = document.getElementById('statusMsg');
 
-<script>
-const video       = document.getElementById('video');
-const canvas      = document.getElementById('canvas');
-const photo       = document.getElementById('photo');
-const overlay     = document.getElementById('hand-overlay');
-const captureBtn  = document.getElementById('captureBtn');
-const retakeBtn   = document.getElementById('retakeBtn');
-const downloadBtn = document.getElementById('downloadBtn');
+    const surveyURL = "https://surveys.tilburguniversity.edu/jfe/form/SV_dck2rt6tnkttf2C";
 
-// Request highest resolution camera feed
-navigator.mediaDevices.getUserMedia({
-  video: {
-    facingMode: "environment",
-    width: { ideal: 1920 },
-    height: { ideal: 1080 }
-  }
-})
-.then(stream => {
-  video.srcObject = stream;
-  return video.play();
-})
-.catch(err => alert("Camera access denied: " + err));
+    // Access camera
+    navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "environment",
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    })
+    .then(stream => {
+      video.srcObject = stream;
+      return video.play();
+    })
+    .catch(err => alert("Camera access denied: " + err));
 
-// Take photo with 4:3 crop
-captureBtn.addEventListener('click', () => {
+    // Take photo
+    captureBtn.addEventListener('click', () => {
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  const ctx = canvas.getContext('2d');
+      photo.src = canvas.toDataURL('image/png');
 
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
+      video.style.display = 'none';
+      overlay.style.display = 'none';
+      photo.style.display = 'block';
 
-  const targetRatio = 3 / 4;       // desired aspect ratio 4:3
-  const videoRatio  = vw / vh;
+      captureBtn.style.display = 'none';
+      retakeBtn.style.display = 'inline-block';
+      downloadBtn.style.display = 'inline-block';
 
-  let sx, sy, sw, sh;
+      statusMsg.textContent = "If you're happy with the photo, download and continue.";
+    });
 
-  if (videoRatio > targetRatio) {
-    // Camera is too wide → crop left/right
-    sh = vh;
-    sw = vh * targetRatio;
-    sx = (vw - sw) / 2;
-    sy = 0;
-  } else {
-    // Camera is too tall → crop top/bottom
-    sw = vw;
-    sh = vw / targetRatio;
-    sx = 0;
-    sy = (vh - sh) / 2;
-  }
+    // Retake
+    retakeBtn.addEventListener('click', () => {
+      photo.style.display = 'none';
+      video.style.display = 'block';
+      overlay.style.display = 'block';
+      captureBtn.style.display = 'inline-block';
+      retakeBtn.style.display = 'none';
+      downloadBtn.style.display = 'none';
+      statusMsg.textContent = "";
+    });
 
-  // Canvas becomes 4:3
-  canvas.width  = sw;
-  canvas.height = sh;
+    // Download
+    downloadBtn.addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = 'hand_photo.png';
+      link.click();
 
-  // draw cropped frame
-  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+      retakeBtn.style.display = 'none';
+      downloadBtn.style.display = 'none';
 
-  // show preview
-  photo.src = canvas.toDataURL("image/png");
-  video.style.display   = "none";
-  overlay.style.display = "none";
-  photo.style.display   = "block";
+      statusMsg.textContent = "Photo saved! Continue to the survey.";
+      returnBtn.textContent = "Continue to Survey";
+      returnBtn.style.display = 'inline-block';
+    });
 
-  captureBtn.style.display  = "none";
-  retakeBtn.style.display   = "inline-block";
-  downloadBtn.style.display = "inline-block";
-});
-
-// Retake
-retakeBtn.addEventListener('click', () => {
-  photo.style.display   = "none";
-  video.style.display   = "block";
-  overlay.style.display = "block";
-
-  captureBtn.style.display  = "inline-block";
-  retakeBtn.style.display   = "none";
-  downloadBtn.style.display = "none";
-});
-
-// Download
-downloadBtn.addEventListener('click', () => {
-  const a = document.createElement('a');
-  a.href = canvas.toDataURL("image/png");
-  a.download = "nail_photo.png";
-  a.click();
-});
-</script>
+    // Return to survey
+    returnBtn.addEventListener('click', () => {
+      window.location.href = surveyURL;
+    });
+  </script>
 
 </body>
 </html>
