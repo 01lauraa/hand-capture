@@ -23,38 +23,40 @@
       color: white;
     }
 
-    /* ♥ FIX: Match PNG aspect ratio exactly */
+    /* CAMERA BOX IS LOCKED TO 4:3 */
     #camera-container {
       position: relative;
       width: 100%;
       max-width: 800px;
-      aspect-ratio: 3 / 4;   /* <- IMPORTANT */
+      aspect-ratio: 3 / 4;
       margin: 0 auto;
       border-radius: 10px;
       overflow: hidden;
-      background: #000;
+      background: black;
     }
 
-    /* ♥ Make all layers fit the same way */
-    video,
-    #photo,
-    #hand-overlay {
+    video, #photo, #hand-overlay {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      object-fit: contain;   /* <- CRITICAL */
+      object-fit: contain;  /* everything scales the same */
     }
 
     #hand-overlay {
-      pointer-events: none;
       z-index: 10;
+      pointer-events: none;
     }
 
-    #photo { display: none; z-index: 5; }
+    #photo {
+      display: none;
+      z-index: 5;
+    }
 
-    video { z-index: 1; }
+    video {
+      z-index: 1;
+    }
 
     #buttons {
       text-align: center;
@@ -66,10 +68,20 @@
       font-size: 18px;
       margin: 0 10px;
       border: none;
-      background: #0073e6;
+      background: rgba(0,115,230,0.9);
       color: white;
       border-radius: 8px;
       cursor: pointer;
+    }
+
+    button:hover {
+      background: rgba(0,91,181,0.9);
+    }
+
+    #statusMsg {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -79,8 +91,12 @@
 <header>Place your hand inside the outline and take a photo</header>
 
 <div id="camera-container">
+
   <video id="video" autoplay playsinline muted></video>
+
+  <!-- PNG overlay: FULL 4:3 IMAGE -->
   <img id="hand-overlay" src="overlay_output.png">
+
   <canvas id="canvas" style="display:none;"></canvas>
   <img id="photo">
 </div>
@@ -91,60 +107,92 @@
   <button id="downloadBtn" style="display:none;">Download</button>
 </div>
 
+<p id="statusMsg"></p>
+
 <script>
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const photo = document.getElementById('photo');
-const overlay = document.getElementById('hand-overlay');
-const captureBtn = document.getElementById('captureBtn');
-const retakeBtn = document.getElementById('retakeBtn');
+const video       = document.getElementById('video');
+const canvas      = document.getElementById('canvas');
+const photo       = document.getElementById('photo');
+const overlay     = document.getElementById('hand-overlay');
+const captureBtn  = document.getElementById('captureBtn');
+const retakeBtn   = document.getElementById('retakeBtn');
 const downloadBtn = document.getElementById('downloadBtn');
 
-// ♥ FIX: Force 4:3 camera
+// Request highest resolution camera feed
 navigator.mediaDevices.getUserMedia({
   video: {
     facingMode: "environment",
-    aspectRatio: { ideal: 3/4 },  // IMPORTANT
-    width: { ideal: 1080 },
-    height: { ideal: 1440 }
+    width: { ideal: 1920 },
+    height: { ideal: 1080 }
   }
 })
 .then(stream => {
   video.srcObject = stream;
-  video.play();
+  return video.play();
 })
 .catch(err => alert("Camera access denied: " + err));
 
+// Take photo with 4:3 crop
 captureBtn.addEventListener('click', () => {
+
   const ctx = canvas.getContext('2d');
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-  ctx.drawImage(video, 0, 0);
 
-  photo.src = canvas.toDataURL();
-  video.style.display = 'none';
-  overlay.style.display = 'none';
-  photo.style.display = 'block';
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
 
-  captureBtn.style.display = 'none';
-  retakeBtn.style.display = 'inline-block';
-  downloadBtn.style.display = 'inline-block';
+  const targetRatio = 3 / 4;       // desired aspect ratio 4:3
+  const videoRatio  = vw / vh;
+
+  let sx, sy, sw, sh;
+
+  if (videoRatio > targetRatio) {
+    // Camera is too wide → crop left/right
+    sh = vh;
+    sw = vh * targetRatio;
+    sx = (vw - sw) / 2;
+    sy = 0;
+  } else {
+    // Camera is too tall → crop top/bottom
+    sw = vw;
+    sh = vw / targetRatio;
+    sx = 0;
+    sy = (vh - sh) / 2;
+  }
+
+  // Canvas becomes 4:3
+  canvas.width  = sw;
+  canvas.height = sh;
+
+  // draw cropped frame
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+
+  // show preview
+  photo.src = canvas.toDataURL("image/png");
+  video.style.display   = "none";
+  overlay.style.display = "none";
+  photo.style.display   = "block";
+
+  captureBtn.style.display  = "none";
+  retakeBtn.style.display   = "inline-block";
+  downloadBtn.style.display = "inline-block";
 });
 
+// Retake
 retakeBtn.addEventListener('click', () => {
-  photo.style.display = 'none';
-  video.style.display = 'block';
-  overlay.style.display = 'block';
+  photo.style.display   = "none";
+  video.style.display   = "block";
+  overlay.style.display = "block";
 
-  captureBtn.style.display = 'inline-block';
-  retakeBtn.style.display = 'none';
-  downloadBtn.style.display = 'none';
+  captureBtn.style.display  = "inline-block";
+  retakeBtn.style.display   = "none";
+  downloadBtn.style.display = "none";
 });
 
+// Download
 downloadBtn.addEventListener('click', () => {
   const a = document.createElement('a');
-  a.href = canvas.toDataURL();
-  a.download = "hand_photo.png";
+  a.href = canvas.toDataURL("image/png");
+  a.download = "nail_photo.png";
   a.click();
 });
 </script>
